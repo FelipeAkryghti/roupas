@@ -32,4 +32,15 @@ public class AsyncConfig {
         return executor;
     }
 
+    @Bean(name = "userTaskExecutor")
+    public Executor userTaskExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(2);
+        executor.setMaxPoolSize(4);
+        executor.setQueueCapacity(50);
+        executor.setThreadNamePrefix("user-async-");
+        executor.initialize();
+        return executor;
+    }
+
 }

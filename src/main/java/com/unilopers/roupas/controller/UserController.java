@@ -1,5 +1,6 @@
 package com.unilopers.roupas.controller;
 
+import com.unilopers.roupas.async.UserAsyncService;
 import com.unilopers.roupas.domain.User;
 import com.unilopers.roupas.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,15 +24,19 @@ public class UserController {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final UserAsyncService userAsyncService;
 
     // ==============================
     // CONSTRUCTORS
     // ==============================
 
     @Autowired
-    public UserController(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public UserController(UserRepository userRepository,
+                          PasswordEncoder passwordEncoder,
+                          UserAsyncService userAsyncService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.userAsyncService = userAsyncService;
     }
 
     // ==============================
@@ -49,6 +54,14 @@ public class UserController {
                 user.setPassword(passwordEncoder.encode(user.getPassword()));
             }
             User entity = userRepository.save(user);
+
+            // Dispara notificação assíncrona sem bloquear a resposta HTTP
+            userAsyncService.notifyUserCreated(
+                    entity.getUserId(),
+                    entity.getName(),
+                    entity.getEmail()
+            );
+
             URI uri = URI.create("/users/" + entity.getUserId());
             return ResponseEntity.created(uri).body(entity);
         } catch (Exception e) {
